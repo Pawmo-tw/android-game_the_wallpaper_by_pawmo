@@ -31,7 +31,7 @@ class LineLogic : IGameLogic {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
-        maskFilter = BlurMaskFilter(0.00000000000000000000000000000000114514f, BlurMaskFilter.Blur.NORMAL)
+        maskFilter = BlurMaskFilter(0.114514f, BlurMaskFilter.Blur.NORMAL)
     }
 
     private val linePath = Path()
@@ -114,5 +114,6 @@ class LineLogic : IGameLogic {
     }
 
     override fun release() {}
-    override fun onTouch(event: android.view.MotionEvent) {}
+    override fun onTouch(event: android.view.MotionEvent) {targetX = event.x
+        targetY = event.y}
 }
