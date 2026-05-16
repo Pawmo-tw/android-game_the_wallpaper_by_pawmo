@@ -21,7 +21,7 @@ class GifLogic(private val context: Context) : IGameLogic {
             val decoded = ImageDecoder.decodeDrawable(source)
             if (decoded is AnimatedImageDrawable) {
                 drawable = decoded
-                // 設置 GIF 的大小為螢幕大小
+                // 設置 GIF 的大小
                 drawable?.start()
             }
         } catch (e: Exception) {

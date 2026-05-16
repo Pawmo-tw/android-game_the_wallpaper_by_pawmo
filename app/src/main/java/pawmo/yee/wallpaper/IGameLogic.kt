@@ -10,7 +10,7 @@ import android.view.MotionEvent
 interface IGameLogic {
 
     /**
-     * 初始化與載入資源（例如 Bitmap, 音效等）
+     * 初始化與載入資源
      * @param resources 來自 Service 的 resources 物件
      */
     fun loadResources(resources: Resources)
@@ -31,7 +31,7 @@ interface IGameLogic {
 
     /**
      * 處理觸控事件
-     * 預設為空實作，不需要觸控的模式不必複寫
+     * 預設為空實作
      */
     fun onTouch(event: MotionEvent) {}
 
@@ -39,12 +39,12 @@ interface IGameLogic {
      * 接收感測器（加速度計）數據
      * @param x 左右傾斜 (正值為左傾, 負值為右傾)
      * @param y 上下傾斜 (正值為直立, 負值為倒立)
-     * 預設為空實作，只有 Liquid 等需要感應的模式才需要複寫
+     * 預設為空實作
      */
     fun onSensorChanged(x: Float, y: Float) {}
 
     /**
-     * 釋放資源（當切換模式或桌布關閉時呼叫）
+     * 釋放資源
      */
     fun release()
 }

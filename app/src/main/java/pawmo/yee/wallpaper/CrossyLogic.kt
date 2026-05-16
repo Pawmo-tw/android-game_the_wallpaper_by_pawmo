@@ -32,7 +32,7 @@ class CrossyLogic : IGameLogic {
 
     private val focalLength = 18f
     private val floorDrawRange = 110
-
+    val curviness = 2
     override fun loadResources(resources: Resources) { resetGame() }
 
     private fun resetGame() {
@@ -87,18 +87,30 @@ class CrossyLogic : IGameLogic {
     private val gamePaint = Paint().apply { isAntiAlias = true }
 
     override fun draw(canvas: Canvas, isNightMode: Boolean) {
-        val skyPaint = Paint().apply {
-            shader = LinearGradient(0f, 0f, 0f, canvasHeight * 0.7f,
-                Color.parseColor(if(isNightMode) "#020205" else "#1e90ff"),
-                Color.parseColor(if(isNightMode) "#0f172a" else "#87ceeb"), Shader.TileMode.CLAMP)
-        }
-        canvas.drawRect(0f, 0f, canvasWidth.toFloat(), canvasHeight.toFloat(), skyPaint)
-
         val cx = canvasWidth / 2f
         val cy = canvasHeight * 0.75f
+        val skyPaint = Paint().apply {
+            isAntiAlias = true
+
+            val skyColors = if (isNightMode) {
+                intArrayOf(
+                    Color.parseColor("#0a001a"),
+                    Color.parseColor("#31004a"),
+                    Color.parseColor("#7b2ff7")
+                )
+            } else {
+                intArrayOf(
+                    Color.parseColor("#f39c12"),
+                    Color.parseColor("#f1c40f"),
+                    Color.parseColor("#fff9c4")
+                )
+            }
+            shader = LinearGradient(0f, 0f, 0f, canvasHeight.toFloat(),
+                skyColors, floatArrayOf(0f, 0.4f, 0.8f), Shader.TileMode.CLAMP)
+        }
+        canvas.drawRect(0f, 0f, canvasWidth.toFloat(), canvasHeight.toFloat(), skyPaint)
         val bs = canvasWidth / 7.5f
         val renderDistance = 45
-
         for (i in (playerY.toInt() + renderDistance) downTo (playerY.toInt() - 5)) {
             if (i < 0 || i >= lanes.size) continue
             drawTexturedLane(canvas, cx, cy, i - playerY, mapWidth.toFloat(), bs, lanes[i], gamePaint, isNightMode, renderDistance)
@@ -142,17 +154,29 @@ class CrossyLogic : IGameLogic {
 
     private fun drawTexturedLane(
         canvas: Canvas, cx: Float, cy: Float, ry: Float, w: Float, s: Float,
-        lane: Lane, paint: Paint, isNightMode: Boolean, maxDist: Int
+        lane: Lane, paint: Paint, isNightMode: Boolean, maxDist: Int,
     ) {
+        // 取得當前行與下一行的垂直位置
         val baseY0 = getPY(ry, cy, s)
         val baseY1 = getPY(ry + 1, cy, s) - 1f
+
+        // 如果超出螢幕範圍則不繪製
         if (baseY1 > baseY0 || baseY0 < 0) return
 
+        // --- 計算淡出 Alpha ---
+        // 當 ry 超過 maxDist 的一半時開始線性淡出
+        val fadeStart = maxDist * 0.5f
+        val alphaPercent = 1f - ((ry - fadeStart) / (maxDist - fadeStart)).coerceIn(0f, 1f)
+        val finalAlpha = (alphaPercent * 255).toInt()
+
+        if (finalAlpha <= 0) return
+
+        // 計算四個角落的投影位置
         val xL0 = getPX(0f, ry, cx, s); val xR0 = getPX(w, ry, cx, s)
         val xL1 = getPX(0f, ry + 1, cx, s); val xR1 = getPX(w, ry + 1, cx, s)
         val xM0 = (xL0 + xR0) / 2f; val xM1 = (xL1 + xR1) / 2f
-        val curviness = 3f
 
+        // 建立地板路徑，並套用曲率
         val path = Path().apply {
             val offL1 = getCurveOffset(xL1, cx) * curviness
             moveTo(xL1, baseY1 + offL1)
@@ -171,16 +195,23 @@ class CrossyLogic : IGameLogic {
             close()
         }
 
-        val alpha = if (ry < maxDist * 0.6f) 255 else ((1f - (ry - maxDist * 0.6f) / (maxDist * 0.4f)) * 255).toInt().coerceIn(0, 255)
-        paint.alpha = alpha
+        // 設定基礎底色
+        val baseColorStr = if (lane.type == TileType.ROAD) {
+            if(isNightMode) "#1e293b" else "#334155"
+        } else {
+            if(isNightMode) "#064e3b" else "#22c55e"
+        }
 
-        val baseColor = if (lane.type == TileType.ROAD) (if(isNightMode) "#1e293b" else "#334155")
-        else (if(isNightMode) "#064e3b" else "#22c55e")
-        paint.color = Color.parseColor(baseColor)
+        val colorInt = Color.parseColor(baseColorStr)
+
+        paint.color = Color.argb(120, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
+        paint.alpha = ((finalAlpha / 150f) * 120).toInt()
+
         canvas.drawPath(path, paint)
 
-        if (lane.type == TileType.GRASS && alpha > 100) {
-            paint.color = Color.argb(40, 255, 255, 255)
+        // 繪製細節
+        if (lane.type == TileType.GRASS) {
+            paint.color = Color.argb((finalAlpha * 0.2f).toInt(), 255, 255, 255)
             val random = java.util.Random(lane.seed)
             repeat(8) {
                 val gx = random.nextFloat() * w
@@ -188,16 +219,17 @@ class CrossyLogic : IGameLogic {
                 val gpy = getPY(ry + 0.5f, cy, s) + getCurveOffset(gpx, cx) * curviness
                 canvas.drawRect(gpx, gpy, gpx + 4f, gpy - 8f * getScale(ry), paint)
             }
-        } else if (lane.type == TileType.ROAD) {
-            paint.color = Color.argb(100, 255, 255, 255)
+        } else {
+            paint.color = Color.argb((finalAlpha * 0.4f).toInt(), 255, 255, 255)
             val mx = getPX(w/2, ry + 0.5f, cx, s)
             val my = getPY(ry + 0.5f, cy, s) + getCurveOffset(mx, cx) * curviness
             canvas.drawRect(mx - 2f, my - 5f, mx + 2f, my + 5f, paint)
         }
 
+        // 繪製格線邊框（增加立體感）
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 1.5f
-        paint.color = Color.argb(20, 0, 0, 0)
+        paint.color = Color.argb((finalAlpha * 0.1f).toInt(), 0, 0, 0)
         canvas.drawPath(path, paint)
         paint.style = Paint.Style.FILL
     }
