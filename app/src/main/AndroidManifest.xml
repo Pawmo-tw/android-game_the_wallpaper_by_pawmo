@@ -4,18 +4,16 @@
 
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-
-
     <application
         android:allowBackup="true"
-        android:icon="@drawable/icon"
+
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+
         android:label="@string/app_name"
-        android:roundIcon="@drawable/icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- 主界面 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -34,11 +32,9 @@
             android:permission="android.permission.BIND_WALLPAPER">
 
             <intent-filter>
-
                 <action android:name="android.service.wallpaper.WallpaperService" />
             </intent-filter>
 
-            <!-- 指向 res/xml/wallpaper.xml 的元數據 -->
             <meta-data
                 android:name="android.service.wallpaper"
                 android:resource="@xml/wallpaper" />
