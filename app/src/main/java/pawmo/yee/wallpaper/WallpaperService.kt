@@ -1,14 +1,15 @@
 package pawmo.yee.wallpaper
 
+import android.app.WallpaperManager
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.service.wallpaper.WallpaperService
@@ -16,7 +17,6 @@ import android.view.MotionEvent
 import android.view.SurfaceHolder
 
 class DinoWallpaperService : WallpaperService(), SensorEventListener {
-
     private var sensorManager: SensorManager? = null
     private var accelerometer: Sensor? = null
     private var gravityX = 0f
@@ -34,50 +34,73 @@ class DinoWallpaperService : WallpaperService(), SensorEventListener {
         private val handler = Handler(Looper.getMainLooper())
         private var gameLogic: IGameLogic? = null
         private var isVisible = false
-        private var currentMode: String = "LIQUID"
+        private var currentMode = "DINO"
 
         private val drawRunnable = object : Runnable {
             override fun run() {
                 if (!isVisible) return
-
-                if (currentMode == "VIDEO") {
-                    handler.postDelayed(this, 100)
-                    return
-                }
-
-                val holder = surfaceHolder
                 var canvas: Canvas? = null
                 try {
-                    canvas = holder.lockCanvas()
-                    if (canvas != null) {
-                        val isNightMode = (resources.configuration.uiMode and
-                                Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-
-                        gameLogic?.apply {
-                            onSensorChanged(gravityX, gravityY)
-                            updatePhysics(canvas.width, canvas.height)
-                            draw(canvas, isNightMode)
+                    canvas = surfaceHolder.lockCanvas()
+                    canvas?.let {
+                        if (currentMode == "VIDEO") {
+                            // 清空畫布維持 Surface 活躍
+                            it.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR)
+                        } else {
+                            val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+                            gameLogic?.apply {
+                                onSensorChanged(gravityX, gravityY)
+                                updatePhysics(it.width, it.height)
+                                draw(it, isNight)
+                            }
                         }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {
-                    canvas?.let { holder.unlockCanvasAndPost(it) }
+                    canvas?.let { surfaceHolder.unlockCanvasAndPost(it) }
                 }
-
-                handler.postDelayed(this, 12)
+                handler.postDelayed(this, if (currentMode == "VIDEO") 100L else 12L)
             }
         }
 
+        override fun onCreate(surfaceHolder: SurfaceHolder?) {
+            super.onCreate(surfaceHolder)
+            setTouchEventsEnabled(true)
+        }
+
+        // 小米 系統 Tap 指令
+        override fun onCommand(action: String?, x: Int, y: Int, z: Int, extras: Bundle?, resultRequested: Boolean): Bundle? {
+            if (action == WallpaperManager.COMMAND_TAP) {
+                dispatchVirtualTouch(x.toFloat(), y.toFloat())
+            }
+            return super.onCommand(action, x, y, z, extras, resultRequested)
+        }
+
         override fun onTouchEvent(event: MotionEvent?) {
-            val e = event ?: return
-            if (e.action == MotionEvent.ACTION_DOWN) {
-                if (e.x in 20f..250f && e.y in 20f..100f) {
-                    cycleGameMode()
-                    return
-                }
+            event?.let { dispatchTouchLogic(it) }
+            super.onTouchEvent(event)
+        }
+
+        // 統一處理虛擬與原生觸摸事件
+        private fun dispatchVirtualTouch(x: Float, y: Float) {
+            val down = MotionEvent.obtain(System.currentTimeMillis(), System.currentTimeMillis(), MotionEvent.ACTION_DOWN, x, y, 0)
+            val isShortcut = dispatchTouchLogic(down)
+            if (!isShortcut) {
+                val up = MotionEvent.obtain(System.currentTimeMillis(), System.currentTimeMillis(), MotionEvent.ACTION_UP, x, y, 0)
+                gameLogic?.onTouch(up)
+                up.recycle()
+            }
+            down.recycle()
+        }
+
+        private fun dispatchTouchLogic(e: MotionEvent): Boolean {
+            if (e.action == MotionEvent.ACTION_DOWN && e.x in 20f..250f && e.y in 20f..100f) {
+                cycleGameMode()
+                return true
             }
             gameLogic?.onTouch(e)
+            return false
         }
 
         private fun cycleGameMode() {
@@ -88,8 +111,8 @@ class DinoWallpaperService : WallpaperService(), SensorEventListener {
         }
 
         private fun initGameLogic() {
-            // 釋放舊資源
             gameLogic?.release()
+            handler.removeCallbacks(drawRunnable)
 
             val prefs = getSharedPreferences("WallpaperSettings", Context.MODE_PRIVATE)
             currentMode = prefs.getString("game_mode", "LIQUID") ?: "LIQUID"
@@ -108,44 +131,36 @@ class DinoWallpaperService : WallpaperService(), SensorEventListener {
                 "VIDEO" -> VideoLogic(applicationContext, surfaceHolder)
                 "GIF" -> GifLogic(applicationContext)
                 else -> DinoLogic()
-            }
+            }.apply { loadResources(resources) }
 
-            gameLogic?.loadResources(resources)
+            if (isVisible) handler.post(drawRunnable)
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
             this.isVisible = visible
             if (visible) {
-                registerSensor()
+                sensorManager?.registerListener(this@DinoWallpaperService, accelerometer, SensorManager.SENSOR_DELAY_GAME)
                 initGameLogic()
-                handler.post(drawRunnable)
             } else {
-                unregisterSensor()
-                handler.removeCallbacks(drawRunnable)
-                gameLogic?.release() // 隱藏時立即暫停影片
+                cleanUp()
             }
         }
 
         override fun onSurfaceDestroyed(holder: SurfaceHolder?) {
             super.onSurfaceDestroyed(holder)
-            this.isVisible = false
-            unregisterSensor()
-            handler.removeCallbacks(drawRunnable)
-            gameLogic?.release()
+            cleanUp()
         }
 
         override fun onDestroy() {
             super.onDestroy()
-            unregisterSensor()
-            gameLogic?.release()
+            cleanUp()
         }
 
-        private fun registerSensor() {
-            sensorManager?.registerListener(this@DinoWallpaperService, accelerometer, SensorManager.SENSOR_DELAY_GAME)
-        }
-
-        private fun unregisterSensor() {
+        private fun cleanUp() {
+            this.isVisible = false
             sensorManager?.unregisterListener(this@DinoWallpaperService)
+            handler.removeCallbacks(drawRunnable)
+            gameLogic?.release()
         }
     }
 

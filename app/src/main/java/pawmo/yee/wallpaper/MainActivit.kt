@@ -5,37 +5,47 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
-    private val ACTION_WALLPAPER_SETTING_CHANGED = "pawmo.yee.wallpaper.SETTING_CHANGED"
+    private var lastClickTime = 0L
+    private val mainHandler = Handler(Looper.getMainLooper())
 
-    private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        uri?.let {
-            handleCustomMedia(it)
-        }
+    private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { handleCustomMedia(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setupClickListeners()
+    }
 
-        // 遊戲與核心特效模式
-        findViewById<LinearLayout>(R.id.llDino).setOnClickListener { handleModeSelection("DINO", "Dino!") }
-        findViewById<LinearLayout>(R.id.llFlappy).setOnClickListener { handleModeSelection("FLAPPY", "Flappy Bird!") }
-        findViewById<LinearLayout>(R.id.llCoreball).setOnClickListener { handleModeSelection("COREBALL", "Coreball!") }
-        findViewById<LinearLayout>(R.id.ll2048).setOnClickListener { handleModeSelection("2048", "2048!") }
-        findViewById<LinearLayout>(R.id.llCrossy).setOnClickListener { handleModeSelection("CROSSY", "Crossy Road!") }
+    private fun setupClickListeners() {
+        val modes = mapOf(
+            R.id.llDino to "DINO", R.id.llFlappy to "FLAPPY", R.id.llCoreball to "COREBALL",
+            R.id.ll2048 to "2048", R.id.llCrossy to "CROSSY", R.id.llMatrix to "MATRIX",
+            R.id.llParticles to "STARS", R.id.llLiquid to "LIQUID", R.id.llAdvanced to "RIPPLE",
+            R.id.llLine to "LINE"
+        )
+        modes.forEach { (id, mode) ->
+            findViewById<LinearLayout>(id).setOnClickListener {
+                if (System.currentTimeMillis() - lastClickTime < 800) return@setOnClickListener
+                lastClickTime = System.currentTimeMillis()
 
-        findViewById<LinearLayout>(R.id.llMatrix).setOnClickListener { handleModeSelection("MATRIX", "Matrix!") }
-        findViewById<LinearLayout>(R.id.llParticles).setOnClickListener { handleModeSelection("STARS", "Star!") }
-        findViewById<LinearLayout>(R.id.llLiquid).setOnClickListener { handleModeSelection("LIQUID", "Liquid!") }
-        findViewById<LinearLayout>(R.id.llAdvanced).setOnClickListener { handleModeSelection("RIPPLE", "Ripple!") }
-        findViewById<LinearLayout>(R.id.llLine).setOnClickListener { handleModeSelection("LINE", "Line Ribbon!") }
+                getSharedPreferences("WallpaperSettings", Context.MODE_PRIVATE).edit().putString("game_mode", mode).apply()
+                sendBroadcast(Intent("pawmo.yee.wallpaper.SETTING_CHANGED").apply { setPackage(packageName) })
+                showToast(mode)
+                openWallpaperSettings()
+            }
+        }
         findViewById<LinearLayout>(R.id.llUpload).setOnClickListener {
             pickMediaLauncher.launch(arrayOf("video/mp4", "image/gif"))
         }
@@ -43,81 +53,71 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleCustomMedia(uri: Uri) {
         try {
-            val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION
-            contentResolver.takePersistableUriPermission(uri, takeFlags)
+            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val mode = if (contentResolver.getType(uri)?.contains("video") == true) "VIDEO" else "GIF"
 
-            val mimeType = contentResolver.getType(uri)
-            val prefs = getSharedPreferences("WallpaperSettings", Context.MODE_PRIVATE)
-
-            val mode = when {
-                mimeType?.contains("video") == true -> "VIDEO"
-                mimeType?.contains("gif") == true -> "GIF"
-                else -> {
-                    showToast("Unsupported format: $mimeType")
-                    return
-                }
-            }
-
-            prefs.edit().apply {
+            getSharedPreferences("WallpaperSettings", Context.MODE_PRIVATE).edit().apply {
                 putString("game_mode", mode)
                 putString("custom_media_uri", uri.toString())
-                apply()
-            }
+            }.apply()
 
-            showToast(":D Successfully Loaded $mode!")
-            notifyWallpaperEngine()
-            openWallpaperSettings()
-
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-            showToast("Security Error: This file source doesn't support persistable permissions.")
+            sendBroadcast(Intent("pawmo.yee.wallpaper.SETTING_CHANGED").apply { setPackage(packageName) })
+            mainHandler.postDelayed({ openWallpaperSettings() }, 150)
         } catch (e: Exception) {
             e.printStackTrace()
-            showToast(" :( Failed to load file: ${e.message}")
+            showToast("fail")
         }
-    }
-
-    private fun handleModeSelection(mode: String, toastMsg: String) {
-        saveMode(mode)
-        showToast(toastMsg)
-        notifyWallpaperEngine()
-        openWallpaperSettings()
-    }
-
-    private fun saveMode(mode: String) {
-        val prefs = getSharedPreferences("WallpaperSettings", Context.MODE_PRIVATE)
-        prefs.edit().putString("game_mode", mode).apply()
-    }
-
-    private fun notifyWallpaperEngine() {
-        val intent = Intent(ACTION_WALLPAPER_SETTING_CHANGED).apply {
-            setPackage(packageName)
-        }
-        sendBroadcast(intent)
     }
 
     private fun openWallpaperSettings() {
-        val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
-            putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-                ComponentName(this@MainActivity, DinoWallpaperService::class.java))
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val comp = ComponentName(this, DinoWallpaperService::class.java)
+        val brand = Build.MANUFACTURER.lowercase() + Build.BRAND.lowercase()
+        val isXiaomi = brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco")
+
+        if (isXiaomi) {
+            // 系統桌布確認套用頁面
+            try {
+                startActivity(Intent().apply {
+                    component = ComponentName("com.android.wallpaper.livepicker", "com.android.wallpaper.livepicker.LiveWallpaperPreview")
+                    putExtra("android.service.wallpaper.extra.LIVE_WALLPAPER_COMPONENT", comp)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                })
+                return
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            // 系統動態桌布選擇列表
+            try {
+                startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                })
+                showToast("click「game the wallpaper」 pls")
+                return
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
+        // 原生 Android 邏輯
         try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            val fallbackIntent = Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER).apply {
+            startActivity(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
+                putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, comp)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+            })
+        } catch (e: Exception) {
             try {
-                startActivity(fallbackIntent)
-            } catch (anfe: Exception) {
-                showToast("Your device doesn't support live wallpapers settings.")
+                startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))
+            } catch (any: Exception) {
+                showToast("err :(")
             }
         }
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+
+    override fun onDestroy() {
+        mainHandler.removeCallbacksAndMessages(null)
+        super.onDestroy()
     }
 }
