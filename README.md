@@ -2,8 +2,10 @@ dont read me
 
 
 
-https://github.com/Pawmo-tw/android-game_the_wallpaper_by_pawmo/releases/tag/v1.0.0
+https://github.com/Pawmo-tw/android-game_the_wallpaper_by_pawmo/releases/tag/v1.1.0
 ඞ ඞ ඞ ඞ ඞ ඞ ඞ 
- 趁沒人我跳個街舞ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+ 
+ 趁沒人我跳個街舞ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽጿ ኈ ቼ ዽ ጿ ኈ ቼ ዽ ጿ ኈ ቼ 
+ ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
