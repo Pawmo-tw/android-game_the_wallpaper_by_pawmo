@@ -11,6 +11,8 @@ import android.graphics.Canvas
 
 class VideoLogic(private val context: Context, private val holder: SurfaceHolder) : IGameLogic {
     private var mediaPlayer: MediaPlayer? = null
+    override var primaryColor: Int = 0xFF34C759.toInt()
+    override var secondaryColor: Int = 0xFFFF9500.toInt()
 
     override fun loadResources(res: Resources) {
         val prefs = context.getSharedPreferences("WallpaperSettings", Context.MODE_PRIVATE)

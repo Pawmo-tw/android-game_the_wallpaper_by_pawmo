@@ -2,51 +2,58 @@ package pawmo.yee.wallpaper
 
 import android.content.res.Resources
 import android.graphics.*
+import android.view.MotionEvent
 import kotlin.math.*
 
 class LineLogic : IGameLogic {
-
+    override var primaryColor: Int = 0xFF34C759.toInt()
+    override var secondaryColor: Int = 0xFFFF9500.toInt()
     private var canvasWidth = 0
     private var canvasHeight = 0
+
     private val segmentCount = 20
     private val nodesX = FloatArray(segmentCount)
     private val nodesY = FloatArray(segmentCount)
     private var targetX = 0f
     private var targetY = 0f
+
     private val stiffness = 0.5f
     private val friction = 0.5f
     private val velocitiesX = FloatArray(segmentCount)
     private val velocitiesY = FloatArray(segmentCount)
+
     private val linePaint = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.STROKE
-        strokeWidth = 114514f
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
     }
-
 
     private val glowPaint = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
-        maskFilter = BlurMaskFilter(0.114514f, BlurMaskFilter.Blur.NORMAL)
+        maskFilter = BlurMaskFilter(25f, BlurMaskFilter.Blur.NORMAL)
     }
 
+    private val bgPaint = Paint().apply { isAntiAlias = true }
     private val linePath = Path()
     private var isInitialized = false
 
-    override fun loadResources(resources: Resources) {}
+    private var backgroundShader: Shader? = null
+    private var lastWidth = 0
+    private var lastHeight = 0
+    private var lastSecondary = 0
 
+    override fun loadResources(resources: Resources) {}
 
     fun onPointerInput(x: Float, y: Float) {
         targetX = x
         targetY = y
     }
 
-    override fun onSensorChanged(x: Float, y: Float) {
-    }
+    override fun onSensorChanged(x: Float, y: Float) {}
 
     override fun updatePhysics(width: Int, height: Int) {
         if (!isInitialized || canvasWidth != width) {
@@ -61,6 +68,20 @@ class LineLogic : IGameLogic {
             isInitialized = true
         }
 
+        if (width != lastWidth || height != lastHeight || secondaryColor != lastSecondary) {
+            lastWidth = width
+            lastHeight = height
+            lastSecondary = secondaryColor
+            if (width > 0 && height > 0) {
+                backgroundShader = LinearGradient(
+                    0f, 0f, 0f, height.toFloat(),
+                    darkenColor(secondaryColor, 0.12f),
+                    darkenColor(secondaryColor, 0.35f),
+                    Shader.TileMode.CLAMP
+                )
+            }
+        }
+
         nodesX[0] += (targetX - nodesX[0]) * 0.3f
         nodesY[0] += (targetY - nodesY[0]) * 0.3f
 
@@ -68,10 +89,8 @@ class LineLogic : IGameLogic {
             val dx = (nodesX[i - 1] - nodesX[i])
             val dy = (nodesY[i - 1] - nodesY[i])
 
-
             velocitiesX[i] = (velocitiesX[i] + dx * stiffness) * friction
             velocitiesY[i] = (velocitiesY[i] + dy * stiffness) * friction
-
 
             nodesX[i] += velocitiesX[i]
             nodesY[i] += velocitiesY[i]
@@ -82,10 +101,11 @@ class LineLogic : IGameLogic {
     }
 
     override fun draw(canvas: Canvas, isNightMode: Boolean) {
-        val bgColor = if (isNightMode) Color.parseColor("#121212") else Color.WHITE
-        val lineColor = if (isNightMode) Color.WHITE else Color.BLACK
+        if (canvasWidth <= 0 || canvasHeight <= 0) return
 
-        canvas.drawColor(bgColor)
+        bgPaint.shader = backgroundShader
+        canvas.drawRect(0f, 0f, canvasWidth.toFloat(), canvasHeight.toFloat(), bgPaint)
+
         linePath.reset()
         linePath.moveTo(nodesX[0], nodesY[0])
         for (i in 1 until segmentCount - 1) {
@@ -95,25 +115,36 @@ class LineLogic : IGameLogic {
         }
         linePath.lineTo(nodesX[segmentCount - 1], nodesY[segmentCount - 1])
 
-
-        glowPaint.color = lineColor
-        glowPaint.alpha = if (isNightMode) 70 else 40
-        glowPaint.strokeWidth = 30f
+        glowPaint.color = primaryColor
+        glowPaint.alpha = if (isNightMode) 140 else 90
+        glowPaint.strokeWidth = 35f
         canvas.drawPath(linePath, glowPaint)
 
-
-        linePaint.color = lineColor
+        linePaint.style = Paint.Style.STROKE
+        linePaint.color = primaryColor
         linePaint.alpha = 255
-        linePaint.strokeWidth = 7f
+        linePaint.strokeWidth = 8f
         canvas.drawPath(linePath, linePaint)
 
-
         linePaint.style = Paint.Style.FILL
-        canvas.drawCircle(nodesX[0], nodesY[0], 5f, linePaint)
-        linePaint.style = Paint.Style.STROKE
+        canvas.drawCircle(nodesX[0], nodesY[0], 6f, linePaint)
     }
 
-    override fun release() {}
-    override fun onTouch(event: android.view.MotionEvent) {targetX = event.x
-        targetY = event.y}
+    private fun darkenColor(color: Int, factor: Float): Int {
+        return Color.argb(
+            255,
+            (Color.red(color) * factor).toInt(),
+            (Color.green(color) * factor).toInt(),
+            (Color.blue(color) * factor).toInt()
+        )
+    }
+
+    override fun onTouch(event: MotionEvent) {
+        targetX = event.x
+        targetY = event.y
+    }
+
+    override fun release() {
+        linePath.reset()
+    }
 }

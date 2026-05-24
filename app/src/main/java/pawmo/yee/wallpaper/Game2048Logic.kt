@@ -7,6 +7,11 @@ import kotlin.math.abs
 import kotlin.random.Random
 
 class Game2048Logic : IGameLogic {
+
+    override var primaryColor: Int = 0xFF34C759.toInt()
+    override var secondaryColor: Int = 0xFFFF9500.toInt()
+
+
     data class Tile(
         var value: Int,
         var r: Int, var c: Int,
@@ -32,6 +37,14 @@ class Game2048Logic : IGameLogic {
     private var gridLeft = 0f
     private var gridTop = 0f
     private val resetBtnRect = RectF()
+
+    private val globalPaint = Paint().apply { isAntiAlias = true }
+
+    private var backgroundShader: Shader? = null
+    private var lastWidth = 0
+    private var lastHeight = 0
+    private var lastPrimary = 0
+    private var lastSecondary = 0
 
     override fun loadResources(resources: Resources) {
         resetGame()
@@ -68,10 +81,26 @@ class Game2048Logic : IGameLogic {
         val btnW = 300f
         resetBtnRect.set(
             canvasWidth / 2f - btnW / 2f,
-            gridTop - 250f, // 放在分數上方一點
+            gridTop - 250f,
             canvasWidth / 2f + btnW / 2f,
             gridTop - 150f
         )
+
+        if (width != lastWidth || height != lastHeight || primaryColor != lastPrimary || secondaryColor != lastSecondary) {
+            lastWidth = width
+            lastHeight = height
+            lastPrimary = primaryColor
+            lastSecondary = secondaryColor
+
+            if (width > 0 && height > 0) {
+                backgroundShader = LinearGradient(
+                    0f, 0f,
+                    0f, height.toFloat(),
+                    secondaryColor, primaryColor,
+                    Shader.TileMode.CLAMP
+                )
+            }
+        }
 
         if (isAnimating) {
             animProgress += animSpeed
@@ -84,61 +113,74 @@ class Game2048Logic : IGameLogic {
     }
 
     override fun draw(canvas: Canvas, isNightMode: Boolean) {
-        canvas.drawColor(if (isNightMode) Color.parseColor("#121212") else Color.parseColor("#FAF8EF"))
-        val paint = Paint().apply { isAntiAlias = true }
+        if (canvasWidth <= 0 || canvasHeight <= 0) return
 
-        paint.color = Color.parseColor("#8F7A66")
-        canvas.drawRoundRect(resetBtnRect, 10f, 10f, paint)
+        globalPaint.reset()
+        globalPaint.isAntiAlias = true
+        globalPaint.shader = backgroundShader
+        canvas.drawRect(0f, 0f, canvasWidth.toFloat(), canvasHeight.toFloat(), globalPaint)
 
-        paint.color = Color.WHITE
-        paint.textSize = 45f
-        paint.textAlign = Paint.Align.CENTER
-        paint.typeface = Typeface.DEFAULT_BOLD
-        val btnBaseline = resetBtnRect.centerY() - (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2
-        canvas.drawText("RESTART", resetBtnRect.centerX(), btnBaseline, paint)
+        globalPaint.shader = null
 
-        // 繪製背景與網格
-        paint.color = Color.parseColor("#BBADA0")
+        globalPaint.color = primaryColor
+        canvas.drawRoundRect(resetBtnRect, 10f, 10f, globalPaint)
+
+        globalPaint.color = secondaryColor
+        globalPaint.textSize = 45f
+        globalPaint.textAlign = Paint.Align.CENTER
+        globalPaint.typeface = Typeface.DEFAULT_BOLD
+        val btnBaseline = resetBtnRect.centerY() - (globalPaint.fontMetrics.ascent + globalPaint.fontMetrics.descent) / 2
+        canvas.drawText("RESTART", resetBtnRect.centerX(), btnBaseline, globalPaint)
+
+        globalPaint.color = primaryColor
         val bgRect = RectF(gridLeft - 15, gridTop - 15, gridLeft + cellSize * gridSize + 15, gridTop + cellSize * gridSize + 15)
-        canvas.drawRoundRect(bgRect, 25f, 25f, paint)
+        canvas.drawRoundRect(bgRect, 25f, 25f, globalPaint)
 
-        paint.color = Color.parseColor("#CDC1B4")
+        globalPaint.color = secondaryColor
         for (r in 0 until gridSize) {
             for (c in 0 until gridSize) {
                 val x = gridLeft + c * cellSize + 10
                 val y = gridTop + r * cellSize + 10
-                canvas.drawRoundRect(RectF(x, y, x + cellSize - 20, y + cellSize - 20), 15f, 15f, paint)
+                canvas.drawRoundRect(RectF(x, y, x + cellSize - 20, y + cellSize - 20), 15f, 15f, globalPaint)
             }
         }
 
-        // 繪製方塊
         for (tile in tiles) {
             val drawR = if (isAnimating && tile.oldR != -1) tile.oldR + (tile.r - tile.oldR) * animProgress else tile.r.toFloat()
             val drawC = if (isAnimating && tile.oldC != -1) tile.oldC + (tile.c - tile.oldC) * animProgress else tile.c.toFloat()
             val scale = if (isAnimating && tile.isNew) animProgress else 1f
 
-            drawValueTile(canvas, drawR, drawC, tile.value, scale, paint)
+            drawValueTile(canvas, drawR, drawC, tile.value, scale, globalPaint)
         }
 
-        // 繪製分數
-        paint.color = if (isNightMode) Color.WHITE else Color.parseColor("#776E65")
-        paint.textSize = 70f
-        canvas.drawText("SCORE: $score", canvasWidth / 2f, gridTop - 60f, paint)
+        globalPaint.reset()
+        globalPaint.isAntiAlias = true
+        globalPaint.color = Color.WHITE
+        globalPaint.textSize = 70f
+        globalPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText("SCORE: $score", canvasWidth / 2f, gridTop - 60f, globalPaint)
     }
 
     private fun drawValueTile(canvas: Canvas, r: Float, c: Float, value: Int, scale: Float, paint: Paint) {
         val centerX = gridLeft + c * cellSize + cellSize / 2
         val centerY = gridTop + r * cellSize + cellSize / 2
         val s = (cellSize - 20) / 2 * scale
-        val rect = RectF(centerX - s, centerY - s, centerX + s, centerY + s)
 
+        paint.reset()
+        paint.isAntiAlias = true
         paint.color = getTileColor(value)
-        canvas.drawRoundRect(rect, 15f, 15f, paint)
+
+        canvas.save()
+        canvas.translate(centerX, centerY)
+        canvas.scale(scale, scale)
+        canvas.drawRoundRect(RectF(-s/scale, -s/scale, s/scale, s/scale), 15f, 15f, paint)
 
         paint.color = if (value <= 4) Color.parseColor("#776E65") else Color.WHITE
-        paint.textSize = (cellSize * 0.4f) * scale
-        val baseline = centerY - (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2
-        canvas.drawText(value.toString(), centerX, baseline, paint)
+        paint.textSize = cellSize * 0.4f
+        paint.textAlign = Paint.Align.CENTER
+        val baseline = 0f - (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2
+        canvas.drawText(value.toString(), 0f, baseline, paint)
+        canvas.restore()
     }
 
     override fun onTouch(event: MotionEvent) {

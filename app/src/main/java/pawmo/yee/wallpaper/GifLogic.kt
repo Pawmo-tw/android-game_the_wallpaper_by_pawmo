@@ -10,6 +10,8 @@ import android.net.Uri
 import android.view.MotionEvent
 
 class GifLogic(private val context: Context) : IGameLogic {
+    override var primaryColor: Int = 0xFF34C759.toInt()
+    override var secondaryColor: Int = 0xFFFF9500.toInt()
     private var drawable: AnimatedImageDrawable? = null
 
     override fun loadResources(res: Resources) {

@@ -1,255 +1,404 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
-    android:fillViewport="true"
-    android:scrollbars="vertical">
+    android:background="#121212">
 
-    <LinearLayout
+    <ScrollView
+        android:id="@+id/layoutWallpapers"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingLeft="24dp"
-        android:paddingRight="24dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="40dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="40dp"
-            android:text="All The Wallpapers by Pawmo"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="24dp"
-            android:text="GAME"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+        android:layout_height="match_parent"
+        android:layout_above="@+id/layoutBottomNav"
+        android:fillViewport="true"
+        android:scrollbars="vertical"
+        android:visibility="visible">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <LinearLayout
-                android:id="@+id/llDino"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    android:id="@+id/ivClassic"
-                    style="@style/IconStyle"
-                    android:src="@drawable/dino_run1" />
-                <TextView
-                    style="@style/TextStyle"
-                    android:text="Dino" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llFlappy"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    android:id="@+id/ivFlappy"
-                    style="@style/IconStyle"
-                    android:src="@drawable/flappy_bird" />
-                <TextView
-                    style="@style/TextStyle"
-                    android:text="Flappy" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llCoreball"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    android:id="@+id/ivCoreball"
-                    style="@style/IconStyle"
-                    android:src="@drawable/coreball" />
-                <TextView
-                    style="@style/TextStyle"
-                    android:text="Coreball" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="32dp">
-
-            <LinearLayout
-                android:id="@+id/ll2048"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    android:id="@+id/iv2048"
-                    style="@style/IconStyle"
-                    android:src="@drawable/game_2048_icon" />
-                <TextView
-                    style="@style/TextStyle"
-                    android:text="2048" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llCrossy"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    android:id="@+id/ivCrossy"
-                    style="@style/IconStyle"
-                    android:src="@drawable/crossy_icon" />
-                <TextView
-                    style="@style/TextStyle"
-                    android:text="Crossy" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="24dp"
-            android:text="Gravity"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="32dp">
-
-            <LinearLayout
-                android:id="@+id/llMatrix"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    style="@style/SmallIconStyle"
-                    android:src="@drawable/matrix_icon" />
-                <TextView
-                    style="@style/SmallTextStyle"
-                    android:text="Matrix" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llParticles"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    style="@style/SmallIconStyle"
-                    android:src="@drawable/particle_icon" />
-                <TextView
-                    style="@style/SmallTextStyle"
-                    android:text="Stars" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llLiquid"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    style="@style/SmallIconStyle"
-                    android:src="@drawable/liquid_icon" />
-                <TextView
-                    style="@style/SmallTextStyle"
-                    android:text="Liquid" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="24dp"
-            android:text="Simulate"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="40dp">
-
-            <LinearLayout
-                android:id="@+id/llAdvanced"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    style="@style/SmallIconStyle"
-                    android:src="@drawable/ripple_icon" />
-                <TextView
-                    style="@style/SmallTextStyle"
-                    android:text="Ripple" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llLine"
-                style="@style/OptionContainerStyle"
-                android:clickable="true"
-                android:focusable="true">
-                <ImageView
-                    style="@style/SmallIconStyle"
-                    android:src="@drawable/line_icon" />
-                <TextView
-                    style="@style/SmallTextStyle"
-                    android:text="Line" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/llUpload"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="70dp"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:background="?attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true">
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="40dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="📁 Upload Custom (MP4 / GIF)"
-                android:textColor="#34C759"
-                android:textSize="18sp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="40dp"
+                android:text="All The Wallpapers by Pawmo"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
                 android:textStyle="bold" />
-        </LinearLayout>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="24dp"
+                android:text="GAME"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:id="@+id/llDino"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:id="@+id/ivClassic"
+                        style="@style/IconStyle"
+                        android:src="@drawable/dino_run1" />
+                    <TextView
+                        style="@style/TextStyle"
+                        android:text="Dino" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llFlappy"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:id="@+id/ivFlappy"
+                        style="@style/IconStyle"
+                        android:src="@drawable/flappy_bird" />
+                    <TextView
+                        style="@style/TextStyle"
+                        android:text="Flappy" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llCoreball"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:id="@+id/ivCoreball"
+                        style="@style/IconStyle"
+                        android:src="@drawable/coreball" />
+                    <TextView
+                        style="@style/TextStyle"
+                        android:text="Coreball" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="32dp">
+
+                <LinearLayout
+                    android:id="@+id/ll2048"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:id="@+id/iv2048"
+                        style="@style/IconStyle"
+                        android:src="@drawable/game_2048_icon" />
+                    <TextView
+                        style="@style/TextStyle"
+                        android:text="2048" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llCrossy"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:id="@+id/ivCrossy"
+                        style="@style/IconStyle"
+                        android:src="@drawable/crossy_icon" />
+                    <TextView
+                        style="@style/TextStyle"
+                        android:text="Crossy" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="24dp"
+                android:text="Gravity"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="32dp">
+
+                <LinearLayout
+                    android:id="@+id/llMatrix"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        style="@style/SmallIconStyle"
+                        android:src="@drawable/matrix_icon" />
+                    <TextView
+                        style="@style/SmallTextStyle"
+                        android:text="Matrix" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llParticles"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        style="@style/SmallIconStyle"
+                        android:src="@drawable/particle_icon" />
+                    <TextView
+                        style="@style/SmallTextStyle"
+                        android:text="Stars" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llLiquid"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        style="@style/SmallIconStyle"
+                        android:src="@drawable/liquid_icon" />
+                    <TextView
+                        style="@style/SmallTextStyle"
+                        android:text="Liquid" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="24dp"
+                android:text="Simulate"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="40dp">
+
+                <LinearLayout
+                    android:id="@+id/llAdvanced"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        style="@style/SmallIconStyle"
+                        android:src="@drawable/ripple_icon" />
+                    <TextView
+                        style="@style/SmallTextStyle"
+                        android:text="Ripple" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/llLine"
+                    style="@style/OptionContainerStyle"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        style="@style/SmallIconStyle"
+                        android:src="@drawable/line_icon" />
+                    <TextView
+                        style="@style/SmallTextStyle"
+                        android:text="Line" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llUpload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="70dp"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="📁 Upload Custom (MP4 / GIF)"
+                    android:textColor="#34C759"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <ScrollView
+        android:id="@+id/layoutSettings"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/layoutBottomNav"
+        android:fillViewport="true"
+        android:visibility="invisible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="40dp"
+                android:text="Customization"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Primary Color"
+                android:textColor="#888888"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp">
+
+                <Button
+                    android:id="@+id/btnPrimaryColor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Select Primary Color"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#1F1F1F"/>
+
+                <View
+                    android:id="@+id/vPrimaryColorPreview"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="16dp"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Secondary Color"
+                android:textColor="#888888"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="32dp">
+
+                <Button
+                    android:id="@+id/btnSecondaryColor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Select Secondary Color"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#1F1F1F"/>
+
+                <View
+                    android:id="@+id/vSecondaryColorPreview"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="16dp"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvFpsLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Frame Rate: 60 FPS"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <SeekBar
+                android:id="@+id/sbFps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:min="15"
+                android:max="120"
+                android:progress="60"
+                android:maxHeight="4dp"
+                android:minHeight="4dp"
+                android:thumbTint="#34C759"
+                android:progressTint="#34C759"
+                android:progressBackgroundTint="#333333"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/layoutBottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:background="#1A1A1A"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btnTabWallpapers"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@android:drawable/ic_menu_gallery"
+            android:contentDescription="Wallpapers" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#2A2A2A"/>
+
+        <ImageButton
+            android:id="@+id/btnTabSettings"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@android:drawable/ic_menu_manage"
+            android:contentDescription="Settings" />
     </LinearLayout>
-</ScrollView>
+</RelativeLayout>

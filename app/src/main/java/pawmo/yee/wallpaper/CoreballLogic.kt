@@ -7,6 +7,9 @@ import kotlin.math.*
 
 class CoreballLogic : IGameLogic {
 
+    override var primaryColor: Int = 0xFF34C759.toInt()
+    override var secondaryColor: Int = 0xFFFF9500.toInt()
+
     private var score = 0
     private var isGameOver = false
     private var rotationAngle = 0f
@@ -36,20 +39,15 @@ class CoreballLogic : IGameLogic {
         centerY = screenHeight * 0.4f
 
         if (!isGameOver) {
-
             val currentSpeed = (baseRotationSpeed + (score / 12f)).coerceAtMost(7.0f)
             rotationAngle = (rotationAngle + currentSpeed) % 360f
 
             if (isLaunching) {
-
                 launchY -= 150f
-
-
                 if (launchY <= centerY + coreRadius + pinLineLength) {
                     checkCollisionAndPin()
                 }
             }
-
 
             if (coreScale > 1.0f) coreScale -= 0.05f
         }
@@ -60,8 +58,17 @@ class CoreballLogic : IGameLogic {
     override fun draw(canvas: Canvas, isNightMode: Boolean) {
         if (screenWidth <= 0f || screenHeight <= 0f) return
 
+        val bgPaint = Paint().apply { isAntiAlias = true }
+        val bgStart = if (isNightMode) darkenColor(secondaryColor, 0.15f) else lightenColor(secondaryColor, 0.85f)
+        val bgEnd = if (isNightMode) darkenColor(primaryColor, 0.1f) else lightenColor(primaryColor, 0.9f)
 
-        canvas.drawColor(if (isNightMode) Color.parseColor("#121212") else Color.WHITE)
+        bgPaint.shader = LinearGradient(
+            0f, 0f, 0f, screenHeight,
+            bgStart, bgEnd,
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, screenWidth, screenHeight, bgPaint)
+
         if (flashAlpha > 0) {
             canvas.drawColor(Color.argb(flashAlpha, 255, 255, 255))
         }
@@ -69,9 +76,7 @@ class CoreballLogic : IGameLogic {
         val paint = Paint().apply {
             isAntiAlias = true
             strokeWidth = 6f
-            color = if (isNightMode) Color.WHITE else Color.BLACK
         }
-
 
         for (angle in pinnedAngles) {
             val currentAngle = (angle + rotationAngle)
@@ -82,42 +87,70 @@ class CoreballLogic : IGameLogic {
             val endX = centerX + (coreRadius + pinLineLength) * cos(rad).toFloat()
             val endY = centerY + (coreRadius + pinLineLength) * sin(rad).toFloat()
 
+            paint.shader = LinearGradient(
+                startX, startY,
+                endX, endY,
+                primaryColor, secondaryColor,
+                Shader.TileMode.CLAMP
+            )
+
+            paint.style = Paint.Style.STROKE
             canvas.drawLine(startX, startY, endX, endY, paint)
+            paint.style = Paint.Style.FILL
             canvas.drawCircle(endX, endY, pinHeadRadius, paint)
         }
 
-
         if (isLaunching) {
+            paint.shader = LinearGradient(
+                centerX, launchY - pinLineLength,
+                centerX, launchY,
+                primaryColor, secondaryColor,
+                Shader.TileMode.CLAMP
+            )
+
+            paint.style = Paint.Style.STROKE
             canvas.drawLine(centerX, launchY, centerX, launchY - pinLineLength, paint)
+            paint.style = Paint.Style.FILL
             canvas.drawCircle(centerX, launchY - pinLineLength, pinHeadRadius, paint)
         }
 
-
+        paint.shader = null
         paint.style = Paint.Style.FILL
+        paint.color = primaryColor
         canvas.drawCircle(centerX, centerY, coreRadius * coreScale, paint)
 
-
-        paint.color = if (isNightMode) Color.BLACK else Color.WHITE
+        paint.color = secondaryColor
         paint.textSize = 80f
         paint.textAlign = Paint.Align.CENTER
+        paint.typeface = Typeface.DEFAULT_BOLD
         canvas.drawText(score.toString(), centerX, centerY + 28f, paint)
 
-
         if (!isGameOver && !isLaunching) {
-            paint.color = if (isNightMode) Color.WHITE else Color.BLACK
             val standbyY = screenHeight * 0.85f
+
+            paint.shader = LinearGradient(
+                centerX, standbyY - pinLineLength,
+                centerX, standbyY,
+                primaryColor, secondaryColor,
+                Shader.TileMode.CLAMP
+            )
+
+            paint.style = Paint.Style.STROKE
             canvas.drawLine(centerX, standbyY, centerX, standbyY - pinLineLength, paint)
+            paint.style = Paint.Style.FILL
             canvas.drawCircle(centerX, standbyY - pinLineLength, pinHeadRadius, paint)
         }
 
-        if (isGameOver) drawGameOverUI(canvas, isNightMode)
+        if (isGameOver) {
+            paint.shader = null
+            drawGameOverUI(canvas, isNightMode)
+        }
     }
 
     private fun checkCollisionAndPin() {
         isLaunching = false
         val hitAngle = (90f - rotationAngle)
 
-        // 碰撞檢查邏輯
         for (angle in pinnedAngles) {
             val diff = abs(((hitAngle % 360 + 360) % 360) - ((angle % 360 + 360) % 360))
             val normalizedDiff = if (diff > 180) 360 - diff else diff
@@ -144,10 +177,9 @@ class CoreballLogic : IGameLogic {
             textAlign = Paint.Align.CENTER
         }
 
-
-        paint.color = Color.WHITE
+        paint.color = primaryColor
         paint.textSize = 120f
-        paint.isFakeBoldText = true
+        paint.typeface = Typeface.DEFAULT_BOLD
         canvas.drawText("GAME OVER", screenWidth / 2f, screenHeight / 2f, paint)
     }
 
@@ -174,6 +206,27 @@ class CoreballLogic : IGameLogic {
         flashAlpha = 0
         pinnedAngles.clear()
         rotationAngle = 0f
+    }
+
+    private fun darkenColor(color: Int, factor: Float): Int {
+        return Color.argb(
+            255,
+            (Color.red(color) * factor).toInt(),
+            (Color.green(color) * factor).toInt(),
+            (Color.blue(color) * factor).toInt()
+        )
+    }
+
+    private fun lightenColor(color: Int, factor: Float): Int {
+        val r = Color.red(color)
+        val g = Color.green(color)
+        val b = Color.blue(color)
+        return Color.argb(
+            255,
+            (r + (255 - r) * factor).toInt(),
+            (g + (255 - g) * factor).toInt(),
+            (b + (255 - b) * factor).toInt()
+        )
     }
 
     override fun release() {}

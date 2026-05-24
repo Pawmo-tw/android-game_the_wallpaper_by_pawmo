@@ -8,6 +8,8 @@ import android.view.MotionEvent
  * 所有桌布遊戲邏輯的統一介面
  */
 interface IGameLogic {
+    var primaryColor: Int
+    var secondaryColor: Int
 
     /**
      * 初始化與載入資源

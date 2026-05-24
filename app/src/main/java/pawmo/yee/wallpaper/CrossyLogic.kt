@@ -15,7 +15,8 @@ class CrossyLogic : IGameLogic {
         val direction: Int = if (Math.random() > 0.5) 1 else -1,
         val seed: Long = (Math.random() * 1000000).toLong()
     )
-
+    override var primaryColor: Int = 0xFF34C759.toInt()
+    override var secondaryColor: Int = 0xFFFF9500.toInt()
     private var canvasWidth = 0
     private var canvasHeight = 0
     private var playerX = 5
@@ -33,6 +34,14 @@ class CrossyLogic : IGameLogic {
     private val focalLength = 18f
     private val floorDrawRange = 110
     val curviness = 2
+
+    private val skyPaint = Paint().apply { isAntiAlias = true }
+    private var skyShader: Shader? = null
+    private var lastWidth = 0
+    private var lastHeight = 0
+    private var lastPrimary = 0
+    private var lastSecondary = 0
+
     override fun loadResources(resources: Resources) { resetGame() }
 
     private fun resetGame() {
@@ -73,6 +82,21 @@ class CrossyLogic : IGameLogic {
         if (abs(playerY - targetY) > 0.01f) playerY += (targetY - playerY) * 0.16f
         if (abs(playerX - targetX) > 0.01f) targetX += (playerX.toFloat() - targetX) * 0.16f
 
+        if (width != lastWidth || height != lastHeight || primaryColor != lastPrimary || secondaryColor != lastSecondary) {
+            lastWidth = width
+            lastHeight = height
+            lastPrimary = primaryColor
+            lastSecondary = secondaryColor
+            if (width > 0 && height > 0) {
+                skyShader = LinearGradient(
+                    0f, 0f,
+                    0f, height.toFloat(),
+                    primaryColor, secondaryColor,
+                    Shader.TileMode.CLAMP
+                )
+            }
+        }
+
         lanes.forEachIndexed { index, lane ->
             if (lane.type == TileType.ROAD) {
                 lane.entities.forEach { car ->
@@ -87,28 +111,14 @@ class CrossyLogic : IGameLogic {
     private val gamePaint = Paint().apply { isAntiAlias = true }
 
     override fun draw(canvas: Canvas, isNightMode: Boolean) {
+        if (canvasWidth <= 0 || canvasHeight <= 0) return
+
         val cx = canvasWidth / 2f
         val cy = canvasHeight * 0.75f
-        val skyPaint = Paint().apply {
-            isAntiAlias = true
 
-            val skyColors = if (isNightMode) {
-                intArrayOf(
-                    Color.parseColor("#0a001a"),
-                    Color.parseColor("#31004a"),
-                    Color.parseColor("#7b2ff7")
-                )
-            } else {
-                intArrayOf(
-                    Color.parseColor("#f39c12"),
-                    Color.parseColor("#f1c40f"),
-                    Color.parseColor("#fff9c4")
-                )
-            }
-            shader = LinearGradient(0f, 0f, 0f, canvasHeight.toFloat(),
-                skyColors, floatArrayOf(0f, 0.4f, 0.8f), Shader.TileMode.CLAMP)
-        }
+        skyPaint.shader = skyShader
         canvas.drawRect(0f, 0f, canvasWidth.toFloat(), canvasHeight.toFloat(), skyPaint)
+
         val bs = canvasWidth / 7.5f
         val renderDistance = 45
         for (i in (playerY.toInt() + renderDistance) downTo (playerY.toInt() - 5)) {
@@ -156,27 +166,21 @@ class CrossyLogic : IGameLogic {
         canvas: Canvas, cx: Float, cy: Float, ry: Float, w: Float, s: Float,
         lane: Lane, paint: Paint, isNightMode: Boolean, maxDist: Int,
     ) {
-        // 取得當前行與下一行的垂直位置
         val baseY0 = getPY(ry, cy, s)
         val baseY1 = getPY(ry + 1, cy, s) - 1f
 
-        // 如果超出螢幕範圍則不繪製
         if (baseY1 > baseY0 || baseY0 < 0) return
 
-        // --- 計算淡出 Alpha ---
-        // 當 ry 超過 maxDist 的一半時開始線性淡出
         val fadeStart = maxDist * 0.5f
         val alphaPercent = 1f - ((ry - fadeStart) / (maxDist - fadeStart)).coerceIn(0f, 1f)
         val finalAlpha = (alphaPercent * 255).toInt()
 
         if (finalAlpha <= 0) return
 
-        // 計算四個角落的投影位置
         val xL0 = getPX(0f, ry, cx, s); val xR0 = getPX(w, ry, cx, s)
         val xL1 = getPX(0f, ry + 1, cx, s); val xR1 = getPX(w, ry + 1, cx, s)
         val xM0 = (xL0 + xR0) / 2f; val xM1 = (xL1 + xR1) / 2f
 
-        // 建立地板路徑，並套用曲率
         val path = Path().apply {
             val offL1 = getCurveOffset(xL1, cx) * curviness
             moveTo(xL1, baseY1 + offL1)
@@ -195,7 +199,6 @@ class CrossyLogic : IGameLogic {
             close()
         }
 
-        // 設定基礎底色
         val baseColorStr = if (lane.type == TileType.ROAD) {
             if(isNightMode) "#1e293b" else "#334155"
         } else {
@@ -209,7 +212,6 @@ class CrossyLogic : IGameLogic {
 
         canvas.drawPath(path, paint)
 
-        // 繪製細節
         if (lane.type == TileType.GRASS) {
             paint.color = Color.argb((finalAlpha * 0.2f).toInt(), 255, 255, 255)
             val random = java.util.Random(lane.seed)
@@ -226,7 +228,6 @@ class CrossyLogic : IGameLogic {
             canvas.drawRect(mx - 2f, my - 5f, mx + 2f, my + 5f, paint)
         }
 
-        // 繪製格線邊框（增加立體感）
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 1.5f
         paint.color = Color.argb((finalAlpha * 0.1f).toInt(), 0, 0, 0)
@@ -248,13 +249,12 @@ class CrossyLogic : IGameLogic {
 
         drawContactShadow(canvas, px, py, s * sc, s * sc)
 
-        if (e.type == 2) { // 樹
+        if (e.type == 2) {
             drawFancyBlock(canvas, px, py, 0f, s * 0.25f * sc, s * 0.7f * sc, Color.parseColor("#451a03"), paint, cx)
             drawFancyBlock(canvas, px, py, s * 0.5f * sc, s * 0.8f * sc, s * 0.8f * sc, Color.parseColor("#15803d"), paint, cx)
-        } else { // 車
+        } else {
             val col = Color.parseColor(if(e.type == 0) "#b91c1c" else "#1d4ed8")
             drawFancyBlock(canvas, px, py, 0f, s * 0.9f * sc, s * 0.4f * sc, col, paint, cx)
-            // 車窗
             drawFancyBlock(canvas, px, py, s * 0.35f * sc, s * 0.6f * sc, s * 0.25f * sc, Color.parseColor("#94a3b8"), paint, cx)
         }
     }
@@ -272,14 +272,11 @@ class CrossyLogic : IGameLogic {
         val sc = getScale(ry)
         val px = getPX(targetX + 0.5f, ry, cx, s)
 
-
         val curviness = 3.5f
         val py = getPY(ry, cy, s) + getCurveOffset(px, cx) * curviness
 
-
         val jump = abs(sin((playerY % 1.0) * PI)).toFloat() * (s * 0.6f) * sc
         val bodyY = py - jump
-
 
         val shadowAlpha = (60 * (1f - (jump / (s * sc)).coerceIn(0f, 1f))).toInt()
         paint.color = Color.argb(shadowAlpha, 0, 0, 0)
@@ -288,15 +285,11 @@ class CrossyLogic : IGameLogic {
         val w = s * 0.55f * sc
         val h = s * 0.6f * sc
 
-
         drawFancyBlock(canvas, px, bodyY, 0f, w, h, Color.parseColor("#2980b9"), paint, cx)
-
 
         val bagW = w * 0.8f
         val bagH = h * 0.7f
-
         drawFancyBlock(canvas, px, bodyY, h * 0.15f, bagW, bagH, Color.parseColor("#d35400"), paint, cx)
-
 
         val headSize = w * 0.75f
         drawFancyBlock(canvas, px, bodyY, h, headSize, headSize, Color.parseColor("#f3e5ab"), paint, cx)
@@ -319,7 +312,6 @@ class CrossyLogic : IGameLogic {
         val botY_L = baseY + (offL * curviness); val botY_R = baseY + (offR * curviness); val botY_M = py - z
         val topY_L = botY_L - h; val topY_R = botY_R - h; val topY_M = botY_M - h
 
-
         val frontPath = Path().apply {
             moveTo(left, topY_L); lineTo(right, topY_R); lineTo(right, botY_R)
             quadTo(px, botY_M, left, botY_L); close()
@@ -329,7 +321,6 @@ class CrossyLogic : IGameLogic {
         canvas.drawPath(frontPath, paint)
         paint.shader = null
 
-
         val thickness = h * 0.15f; val slant = (px - cx) * 0.08f
         val topPath = Path().apply {
             moveTo(left, topY_L); lineTo(right, topY_R)
@@ -337,7 +328,6 @@ class CrossyLogic : IGameLogic {
         }
         paint.color = lightenColor(col, 1.2f)
         canvas.drawPath(topPath, paint)
-
 
         if (abs(px - cx) > 10f) {
             val sidePath = Path()
@@ -357,7 +347,6 @@ class CrossyLogic : IGameLogic {
     private fun darkenColor(c: Int, f: Float) = Color.argb(255, (Color.red(c)*f).toInt(), (Color.green(c)*f).toInt(), (Color.blue(c)*f).toInt())
     private fun getScale(ry: Float) = focalLength / (focalLength + ry + 0.5f)
     private fun getPX(ix: Float, ry: Float, cx: Float, s: Float) = cx + (ix - mapWidth/2f) * s * 1.35f * getScale(ry)
-
     private fun getPY(ry: Float, cy: Float, s: Float) = cy - (ry * s * 0.75f) * getScale(ry)
 
     private fun drawUI(canvas: Canvas) {

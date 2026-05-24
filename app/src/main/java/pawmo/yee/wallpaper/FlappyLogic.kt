@@ -3,10 +3,14 @@ package pawmo.yee.wallpaper
 import android.content.res.Resources
 import android.graphics.*
 import android.view.MotionEvent
-import  android.text.Layout
+import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+
 class FlappyLogic : IGameLogic {
+    override var primaryColor: Int = 0xFF34C759.toInt()
+    override var secondaryColor: Int = 0xFFFF9500.toInt()
+
     private var score = -1
     private var isGameOver = false
     private var scoreCounted = false
@@ -25,6 +29,7 @@ class FlappyLogic : IGameLogic {
     private var pipeUpperBitmap: Bitmap? = null
     private var pipeLowerBitmap: Bitmap? = null
     private val paint = Paint().apply { isAntiAlias = true }
+
     private val deathSlogans = listOf(
         "BRUH",
         "Nahh",
@@ -39,6 +44,7 @@ class FlappyLogic : IGameLogic {
         "mamba out",
     )
     private var currentSlogan = deathSlogans[0]
+
     override fun loadResources(resources: Resources) {
         try {
             val birdOrg = BitmapFactory.decodeResource(resources, R.drawable.flappy_bird)
@@ -101,15 +107,12 @@ class FlappyLogic : IGameLogic {
                 if (!isGameOver) {
                     isGameOver = true
                     velocityY = -10f
-
                     currentSlogan = deathSlogans.random()
                 }
                 isGameOver = true
                 velocityY = -10f
-
             }
         } else {
-
             if (flappyY < height) {
                 velocityY += gravity
                 flappyY += velocityY
@@ -118,7 +121,6 @@ class FlappyLogic : IGameLogic {
                 flappyY = height.toFloat()
             }
         }
-
 
         bgBitmap?.let {
             if (it.height != height && height > 0) {
@@ -134,7 +136,13 @@ class FlappyLogic : IGameLogic {
         val viewHeight = canvas.height
         if (viewWidth <= 0 || viewHeight <= 0) return
 
-
+        val shader = LinearGradient(
+            0f, 0f, 0f, viewHeight.toFloat(),
+            primaryColor, secondaryColor,
+            Shader.TileMode.CLAMP
+        )
+        val gradientPaint = Paint().apply { this.shader = shader }
+        canvas.drawRect(0f, 0f, viewWidth.toFloat(), viewHeight.toFloat(), gradientPaint)
 
         bgBitmap?.let { bmt ->
             canvas.drawBitmap(bmt, bgX, 0f, null)
@@ -142,7 +150,6 @@ class FlappyLogic : IGameLogic {
                 canvas.drawBitmap(bmt, bgX + bmt.width, 0f, null)
             }
         }
-
 
         val upPipe = pipeUpperBitmap
         val lowPipe = pipeLowerBitmap
@@ -184,12 +191,11 @@ class FlappyLogic : IGameLogic {
 
         if (isGameOver) {
             // GAME OVER
-            paint.textAlign = Paint.Align.CENTER // 置中
+            paint.textAlign = Paint.Align.CENTER
             paint.color = Color.WHITE
             paint.textSize = 100f
             canvas.drawText("GAME OVER", viewWidth / 2f, viewHeight / 2f, paint)
 
-            // TextPaint
             val textPaint = TextPaint().apply {
                 isAntiAlias = true
                 color = Color.WHITE
@@ -205,10 +211,7 @@ class FlappyLogic : IGameLogic {
             ).setAlignment(Layout.Alignment.ALIGN_CENTER).build()
 
             canvas.save()
-
-
             canvas.translate(0f, viewHeight / 2f + 120f)
-
             staticLayout.draw(canvas)
             canvas.restore()
         }
@@ -219,7 +222,6 @@ class FlappyLogic : IGameLogic {
             if (!isGameOver) {
                 velocityY = jumpStrength
             } else {
-
                 resetGame(screenWidth = 1080)
             }
         }
